@@ -5,29 +5,29 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  VENV_DIR: 'venv'
+  VENV_DIR: '.venv'  # Use a hidden venv for convention
 
 steps:
-
 - task: UsePythonVersion@0
   inputs:
     versionSpec: '3.9'
+    addToPath: true
 
 - script: |
     python -m venv $(VENV_DIR)
     source $(VENV_DIR)/bin/activate
     pip install --upgrade pip
     pip install -r requirements.txt
-  displayName: 'Install dependencies'
+  displayName: '✅ Set up Python & Install dependencies'
 
 - script: |
     source $(VENV_DIR)/bin/activate
-    pytest --html=report.html --self-contained-html
-  displayName: 'Run Pytest with HTML report'
+    pytest tests/ --html=report.html --self-contained-html -v --tb=short
+  displayName: '🧪 Run Pytest and generate HTML report'
 
 - task: PublishBuildArtifacts@1
   inputs:
     pathToPublish: 'report.html'
     artifactName: 'TestReport'
     publishLocation: 'Container'
-  displayName: 'Publish HTML Report as Artifact'
+  displayName: '📄 Publish HTML Report as Artifact'
