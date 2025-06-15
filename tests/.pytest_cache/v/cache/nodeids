@@ -1,0 +1,4 @@
+[
+  "test_login.py::test_login_page",
+  "test_login.py::test_login_valid_credentials"
+]

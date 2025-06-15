@@ -1,0 +1,36 @@
+
+✅ Run all tests
+    pytest
+        Runs all discovered tests in the current dir and subdirs
+✅ Run specific test file
+    pytest tests/test_login.py
+        Runs tests in the specified file
+✅ Run specific test function
+    pytest tests/test_login.py::test_login_and_homepage
+        Runs just that one test function
+✅ Verbose + show print() output
+       pytest -v -s
+            -v: verbose output, -s: show print() and logging
+✅ Short tracebacks (tabular style)
+       pytest -v --tb=short
+            Shows concise failure info per test
+✅ One-line failures
+    pytest -v --tb=line
+        Each failed test in one summary line
+✅ No traceback at all
+    pytest -v --tb=no
+        Only shows pass/fail status, no error details
+✅ Show top 5 slowest tests
+    pytest --durations=5
+        Useful to profile test performance
+✅ Stop after first failure
+    pytest --maxfail=1 -v
+        Fast feedback during development
+✅ Disable warnings
+    pytest -p no:warnings or pytest --disable-warnings
+        Keeps the output clean
+
+===============
+-rA == Show all summary info
+-rf == Show only failed tests
+-rx == Show skipped reasons
