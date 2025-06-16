@@ -1,91 +1,126 @@
-pipeline {
-    agent any // Or a specific agent like 'agent { label 'your-linux-agent' }'
+// Jenkinsfile for Python + Pytest + Selenium Project
+// Repository: https://github.com/goodtogo01/End2End_Python
 
+pipeline {
+    // Defines where the pipeline will execute.
+    // 'agent any' means it can run on any available Jenkins agent.
+    // For specific environments (e.g., agents with browsers installed),
+    // you might use 'agent { label 'your-selenium-agent-label' }'
+    agent any
+
+    // Define environment variables accessible throughout the pipeline.
+    // This is useful for configurations like browser choice.
     environment {
-        // Define environment variables if needed, e.g., for browser choice
-        BROWSER = 'chrome' // Or 'firefox', etc.
-        // For headless Chrome/Firefox, set relevant display variables
-        // DISPLAY = ':99' // For Xvfb or similar if running on Linux with no GUI
+        // Example: BROWSER = 'chrome' or 'firefox'
+        // For headless execution on Linux, you might need to set DISPLAY for Xvfb
+        // DISPLAY = ':99'
     }
 
+    // Stages define the sequential steps of your CI/CD pipeline.
     stages {
-        stage('Checkout') {
+        stage('Checkout Source Code') {
             steps {
-                // Checkout your Git repository
+                echo 'Checking out source code from Git...'
                 git url: 'https://github.com/goodtogo01/End2End_Python.git',
-                    branch: 'main' // Or 'master', or use 'credentialsId: 'your-credential-id'' for private repos
+                    branch: 'main' // Assuming 'main' is your primary branch. Adjust if different (e.g., 'master').
             }
         }
 
-        stage('Setup Environment') {
+        stage('Setup Python Environment & Install Dependencies') {
             steps {
                 script {
-                    // Create a virtual environment
+                    echo 'Setting up Python virtual environment...'
+                    // Create a Python virtual environment named 'venv'
                     sh 'python3 -m venv venv'
-                    // Activate virtual environment and install dependencies
-                    // Note: '&&' is used to chain commands and ensure subsequent commands run in the activated venv
+
+                    echo 'Activating venv, upgrading pip, and handling webdriver_manager...'
+                    // Activate the virtual environment for subsequent commands in this block
+                    sh '. venv/bin/activate && \\' + // Use '\' for line continuation in Groovy sh block
+                       'pip install --upgrade pip && \\' + // Upgrade pip within the virtual environment
+                       'pip install --upgrade webdriver-manager' // Upgrade webdriver-manager within the virtual environment
+
+                    // Remove the problematic cache directory for webdriver_manager.
+                    // This typically resides in the user's home directory on the Jenkins agent.
+                    // Running this after activating venv ensures we're in the correct user context.
+                    sh 'rm -rf ~/.wdm'
+                    echo 'webdriver_manager cache cleared and library upgraded.'
+
+                    echo 'Installing project-specific dependencies from requirements.txt...'
+                    // Install project-specific dependencies from requirements.txt
                     sh '. venv/bin/activate && pip install --no-cache-dir -r requirements.txt'
-                    // For headless execution with Chrome/Firefox on Linux, you might start Xvfb here
-                    // e.g., sh 'Xvfb :99 -screen 0 1024x768x24 & export DISPLAY=:99'
+                    echo 'Python environment setup complete.'
+
+                    // --- IMPORTANT for Headless Browsers on Linux Agents ---
+                    // If your Jenkins agent is a Linux server without a GUI, you'll need Xvfb (Virtual Framebuffer)
+                    // and ensure your Selenium code runs in headless mode.
+                    // Example (uncomment if applicable and ensure Xvfb is installed on agent):
+                    // sh 'Xvfb :99 -screen 0 1024x768x24 & export DISPLAY=:99'
+                    // Make sure your Selenium test code explicitly sets ChromeOptions().add_argument('--headless')
+                    // or FirefoxOptions().add_argument('--headless').
                 }
             }
         }
 
-        stage('Run Tests') {
+        stage('Run Pytest Selenium Tests') {
             steps {
                 script {
-                    // Activate virtual environment and run pytest
-                    // --html and --self-contained-html are for generating a single HTML report
-                    // --junitxml is for JUnit style reports, useful for Jenkins test result trend graphs
-                    // '|| true' is used to ensure the pipeline doesn't fail immediately on test failures,
-                    // allowing the HTML report to be published. Jenkins will still mark the build as unstable/failed.
+                    echo 'Running Pytest tests with Selenium...'
+                    // Activate the virtual environment and run pytest
+                    // 'tests/' assumes your tests are in a folder named 'tests'
+                    // '--html=report.html --self-contained-html' generates a single HTML report (requires pytest-html)
+                    // '--junitxml=results.xml' generates a JUnit XML report for Jenkins' built-in test reporting
+                    // '|| true' ensures the stage completes even if tests fail, allowing reports to be published.
+                    // Jenkins will still mark the build as 'UNSTABLE' or 'FAILED' based on JUnit results.
                     sh '. venv/bin/activate && pytest tests/ --html=report.html --self-contained-html --junitxml=results.xml || true'
+                    echo 'Pytest execution finished.'
                 }
             }
         }
 
-        stage('Publish Test Results') {
+        stage('Publish Test Reports') {
             steps {
-                // Publish HTML report
+                echo 'Publishing test reports...'
+                // Publish the HTML report generated by pytest-html
                 publishHTML (
                     target: [
-                        allowMissing: false,
+                        allowMissing: false, // Set to true if the report might not always be generated
                         alwaysLinkToLastBuild: false,
                         keepAll: true,
-                        reportDir: '.', // The directory where report.html is located
+                        reportDir: '.',       // Directory where report.html is located (relative to workspace)
                         reportFiles: 'report.html',
                         reportName: 'Pytest HTML Report'
                     ]
                 )
-                // Publish JUnit XML results for Jenkins' built-in test result trends
-                junit 'results.xml'
-            }
-        }
-
-        stage('Cleanup') {
-            steps {
-                // Clean up virtual environment if needed (optional)
-                sh 'rm -rf venv'
-                // If you started Xvfb, kill it here
-                // sh 'killall Xvfb'
+                // Publish JUnit XML results for Jenkins' built-in test result trends and details
+                junit 'results.xml' // Assumes results.xml is in the workspace root
+                echo 'Reports published.'
             }
         }
     }
 
-    // Post-build actions (e.g., notifications)
+    // Post-build actions: These run after all stages have attempted to complete.
     post {
+        // 'always' actions run regardless of the pipeline's outcome.
         always {
-            cleanWs() // Clean up the workspace after the build
+            echo 'Cleaning up workspace...'
+            cleanWs() // Cleans up the Jenkins workspace after the build
+            // If you started Xvfb, you might kill it here (e.g., sh 'killall Xvfb' or similar)
         }
+        // 'success' actions run if all stages completed successfully.
         success {
-            echo 'Build Successful!'
-            // You can add notifications here, e.g., Slack
+            echo 'Pipeline completed successfully!'
+            // You can add notifications here, e.g., Slack, email
+            // slackSend channel: '#devops', message: 'Pytest-Selenium build succeeded!'
         }
+        // 'failure' actions run if any stage explicitly failed.
         failure {
-            echo 'Build Failed!'
+            echo 'Pipeline failed!'
+            // Add failure notifications
+            // mail to: 'your-email@example.com', subject: "Jenkins Build Failed: ${env.JOB_NAME}", body: "Build ${env.BUILD_NUMBER} failed. Check ${env.BUILD_URL}console for details."
         }
+        // 'unstable' actions run if the pipeline completed but had test failures (due to '|| true' in pytest)
         unstable {
-            echo 'Build Unstable (tests failed)!'
+            echo 'Pipeline completed but tests had failures/skipped!'
         }
     }
 }
