@@ -1,4 +1,5 @@
 import pytest
+import warnings
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -8,15 +9,21 @@ from webdriver_manager.chrome import ChromeDriverManager
 @pytest.fixture
 def driver():
     options = Options()
-    # options.add_argument("--headless=new")  # Optional: Headless mode
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    driver.maximize_window()
+
+    # ✅ Headless mode with proper flags for Jenkins/Linux/macOS CI
+    options.add_argument("--headless=new")  # For Chromium 109+
+    options.add_argument("--no-sandbox")  # Required for CI (Linux)
+    options.add_argument("--disable-dev-shm-usage")  # Prevent shared memory issues
+    options.add_argument("--window-size=1920,1080")  # Optional: useful in headless
+
+    # ✅ Create ChromeDriver using webdriver-manager
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=options)
     yield driver
     driver.quit()
 
 
 def pytest_configure(config):
-    import warnings
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     warnings.filterwarnings("ignore", category=UserWarning)
 
