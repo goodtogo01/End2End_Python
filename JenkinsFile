@@ -12,7 +12,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 // Checkout your Git repository
-                git url: 'https://github.com/your-username/your-selenium-project.git',
+                git url: 'https://github.com/goodtogo01/End2End_Python.git',
                     branch: 'main' // Or 'master', or use 'credentialsId: 'your-credential-id'' for private repos
             }
         }
