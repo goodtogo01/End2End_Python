@@ -17,19 +17,40 @@ pipeline {
             }
         }
 
-        stage('Setup Environment') {
+       // ... (previous Jenkinsfile code) ...
+
+        stage('Setup Python Environment & Install Dependencies') {
             steps {
                 script {
-                    // Create a virtual environment
+                    echo 'Setting up Python virtual environment and installing dependencies...'
+
+                    // --- Recommended order for venv and pip/webdriver-manager ---
+                    // 1. Create venv
                     sh 'python3 -m venv venv'
-                    // Activate virtual environment and install dependencies
-                    // Note: '&&' is used to chain commands and ensure subsequent commands run in the activated venv
+                    // 2. Activate venv
+                    sh '. venv/bin/activate && \\' // Use '\' for line continuation in Groovy sh block
+                       'pip install --upgrade pip && \\' // Upgrade pip inside venv
+                       'pip install --upgrade webdriver-manager' // Upgrade webdriver-manager inside venv
+                    // 3. Clear the webdriver_manager cache on the agent
+                    //    The cache is usually in the user's home directory, not necessarily in the venv
+                    //    So, `rm -rf ~/.wdm` should be outside the activated venv context if that's where the cache is.
+                    //    However, `webdriver_manager` typically stores cache relative to the user running the script.
+                    //    If Jenkins is running as a specific user, that user's home dir needs cleaning.
+                    sh 'rm -rf ~/.wdm'
+                    echo 'webdriver_manager cleaned and upgraded.'
+                    // --- End recommended order ---
+
+                    // Install project-specific dependencies
                     sh '. venv/bin/activate && pip install --no-cache-dir -r requirements.txt'
-                    // For headless execution with Chrome/Firefox on Linux, you might start Xvfb here
-                    // e.g., sh 'Xvfb :99 -screen 0 1024x768x24 & export DISPLAY=:99'
+                    echo 'Python environment setup complete.'
+
+                    // (Optional: Xvfb setup if needed for headless Browse on Linux)
+                    // sh 'Xvfb :99 -screen 0 1024x768x24 & export DISPLAY=:99'
                 }
             }
         }
+
+
 
         stage('Run Tests') {
             steps {

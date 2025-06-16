@@ -6,6 +6,10 @@
   <component name="ChangeListManager">
     <list default="true" id="8db0eb05-ec63-46bc-8431-f5422142d08f" name="Changes" comment="YML file added - v0.1.1">
       <change beforePath="$PROJECT_DIR$/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/Jenkinsfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/venv/lib/python3.9/site-packages/webdriver_manager/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/venv/lib/python3.9/site-packages/webdriver_manager/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/venv/lib/python3.9/site-packages/webdriver_manager/core/driver_cache.py" beforeDir="false" afterPath="$PROJECT_DIR$/venv/lib/python3.9/site-packages/webdriver_manager/core/driver_cache.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/venv/lib/python3.9/site-packages/webdriver_manager/core/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/venv/lib/python3.9/site-packages/webdriver_manager/core/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/venv/lib/python3.9/site-packages/webdriver_manager/drivers/chrome.py" beforeDir="false" afterPath="$PROJECT_DIR$/venv/lib/python3.9/site-packages/webdriver_manager/drivers/chrome.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
